@@ -31,6 +31,7 @@ const User = mongoose.model('User', {
     },
     age: {
       type: Number,
+      required: true,
       validate(val) {
           if(val<0){
               throw new Error("Age must be a positive number")
