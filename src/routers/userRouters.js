@@ -1,33 +1,40 @@
 const express = require('express')
 const User = require('../models/user')
 const router = new express.Router()
+const auth = require('../middleware/auth')
 
 
+router.get('/users/me', auth, async (req,res) => {
 
-router.get('/users', async (req,res) => {
-
-    try {
-      const users = await User.find({})
-      res.send(users)
-    } catch (error) {
-      res.status(500).send(error)
-    }
-  
+  res.send(req.user) //reg.user created @auth step
+   
   })
 
 
   router.post('/login', async(req, res) =>{
-    console.log("login route")
     try {
       const password = req.body.password
       const email = req.body.email
       const user = await User.findByCredentials(email, password)
-      res.send(user)
+      const token = await user.generateAuthToken() //not User ! 'u'ser with lowercase
+      res.send({user, token})
     } catch (error) {
       res.status(400).send(error)
     }
-  })
+  }) 
   
+  router.post('/logout', auth, async(req, res) =>{
+    try {
+      req.user.tokens = req.user.tokens.filter((tokenObject) => {
+        return req.token !== tokenObject.token
+      })
+      await req.user.save()
+      res.send()
+    } catch (error) {
+      res.status(500).send()
+    }
+
+  })
   router.get('/users/:id' , async (req,res)  => {
     const ID = req.params.id
     try {
@@ -47,7 +54,8 @@ router.get('/users', async (req,res) => {
   
     try {
       await user.save()
-      res.status(201).send(user)
+      const token = await user.generateAuthToken()
+      res.status(201).send({ user, token})
     } catch (error) {
       res.status(400).send(error)
     }

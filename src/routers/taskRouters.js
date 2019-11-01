@@ -58,7 +58,6 @@ router.delete("/tasks/:id", async (req, res) => {
 
 
 router.patch('/tasks/:id', async (req, res) => {
-    console.log("qweqwe");
 
     const validUpdates = ['description', 'completed']
     const updates = Object.keys(req.body)
