@@ -14,6 +14,19 @@ router.get('/users', async (req,res) => {
     }
   
   })
+
+
+  router.post('/login', async(req, res) =>{
+    console.log("login route")
+    try {
+      const password = req.body.password
+      const email = req.body.email
+      const user = await User.findByCredentials(email, password)
+      res.send(user)
+    } catch (error) {
+      res.status(400).send(error)
+    }
+  })
   
   router.get('/users/:id' , async (req,res)  => {
     const ID = req.params.id
@@ -54,14 +67,21 @@ router.get('/users', async (req,res) => {
   
     try {
       const ID  = req.params.id
-      const user = await User.findByIdAndUpdate(ID , req.body, {new: true, runValidators: true})
+      const user = await User.findById(ID)
+      
+      updates.forEach((update) => {
+        user[update] = req.body[update]
+      })
+
+      await user.save()
+      
       if(!user){
         return res.status(404).send()
       }
   
       res.send(user)
     } catch (error) {
-      res.status(400).send(e)
+      res.status(400).send(error)
       
     }
   
