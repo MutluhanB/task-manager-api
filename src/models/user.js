@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const validator = require('validator')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
-
+const Task = require('./task')
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -76,7 +76,20 @@ userSchema.methods.generateAuthToken = async function(){
 
 }
 
-//Hashing the password before saving
+userSchema.methods.getPublicProfile = async function(){
+    const user = this
+    const userPublic = user.toObject()
+    
+    delete userPublic.password
+    delete userPublic.tokens
+
+
+    return userPublic
+}
+
+
+
+//MIDDLEWARE Hashing the password before saving
 userSchema.pre('save', async function (next){
     const user = this
     if(user.isModified('password')){
@@ -84,6 +97,21 @@ userSchema.pre('save', async function (next){
     }
 
     next()
+})
+
+//MIDDLEWARE Delete tasks associated with user when user deletes his profile.
+userSchema.pre('remove', async function(next){
+    const user = this
+    await Task.deleteMany({owner: user._id})
+
+    next()
+})
+
+//Creating virtual relations.
+userSchema.virtual('tasks', {
+    ref: 'Task',
+    localField: '_id',
+    foreignField: 'owner'
 })
 
 const User = mongoose.model('User',userSchema)

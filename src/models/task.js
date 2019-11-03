@@ -7,7 +7,13 @@ const taskSchema = new mongoose.Schema( {
         trim: true,
     },
     completed: {
-        type: Boolean
+        type: Boolean,
+        default: false,
+    },
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'User',
     }
 })
 

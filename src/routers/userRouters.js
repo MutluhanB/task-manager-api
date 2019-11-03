@@ -5,8 +5,8 @@ const auth = require('../middleware/auth')
 
 
 router.get('/users/me', auth, async (req,res) => {
-
-  res.send(req.user) //reg.user created @auth step
+  const user = req.user
+  res.send(await user.getPublicProfile()) //reg.user created @auth step
    
   })
 
@@ -17,7 +17,7 @@ router.get('/users/me', auth, async (req,res) => {
       const email = req.body.email
       const user = await User.findByCredentials(email, password)
       const token = await user.generateAuthToken() //not User ! 'u'ser with lowercase
-      res.send({user, token})
+      res.send({user: await user.getPublicProfile(), token})
     } catch (error) {
       res.status(400).send(error)
     }
@@ -29,26 +29,15 @@ router.get('/users/me', auth, async (req,res) => {
         return req.token !== tokenObject.token
       })
       await req.user.save()
-      res.send()
+      res.status(200).send()
     } catch (error) {
       res.status(500).send()
     }
 
   })
-  router.get('/users/:id' , async (req,res)  => {
-    const ID = req.params.id
-    try {
-      const user = await User.findById(ID)
-      if (!user) {
-        return res.status(404).send()
-      }
-      return res.send(user)
-    } catch (error) {
-      res.status(500).send()
-    }
+
   
-  })
-  
+  //create new user
   router.post('/users', async (req,res)=>{
     const user = new User(req.body)
   
@@ -62,8 +51,7 @@ router.get('/users/me', auth, async (req,res) => {
   
   })
   
-  router.patch('/users/:id', async(req, res) =>{
-  
+  router.patch('/users/me', auth, async(req, res) =>{
     const validUpdates = ['name', 'email', 'password', 'age']
     const updates = Object.keys(req.body)
     const isValidUpdate = updates.every((update)=>{
@@ -74,18 +62,14 @@ router.get('/users/me', auth, async (req,res) => {
     }
   
     try {
-      const ID  = req.params.id
-      const user = await User.findById(ID)
       
+      const user = req.user
       updates.forEach((update) => {
         user[update] = req.body[update]
       })
 
       await user.save()
       
-      if(!user){
-        return res.status(404).send()
-      }
   
       res.send(user)
     } catch (error) {
@@ -96,14 +80,10 @@ router.get('/users/me', auth, async (req,res) => {
   })
   
 
-router.delete('/users/:id', async(req, res) => {
+router.delete('/users/me', auth, async(req, res) => {
     try {
-      const ID = req.params.id
-      const user = await User.findByIdAndDelete(ID)
-      if (!user) {
-        return res.status(404).send({error: "user not found for given ID"+ ID}) 
-      }
-      res.send(user)
+      await req.user.remove()
+      res.send(req.user)
     } catch (error)  {
       res.status(500).send()
     }
